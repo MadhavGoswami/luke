@@ -1,0 +1,324 @@
+#include<fstream.h>
+#include<conio.h>
+#include<stdio.h>
+#include<process.h>
+#include<string.h>
+
+class market
+{
+ private:
+  int   prno;
+  float price;
+  char  pname[20];
+ public:
+  void show_product();
+  void create_product();
+  int retprno()
+   {
+    return prno;
+   }
+  float retprice()
+   {
+    return price;
+   }
+  char*retname()
+  {
+    return pname;
+  }
+}ob;
+
+void market::create_product()
+{
+ cout<<"\nEnter number of product:";
+ cin>>prno;
+ cout<<"\nEnter name of product:";
+ gets(pname);
+ cout<<"\nEnter price of product:";
+ cin>>price;
+}
+
+void market::show_product()
+{
+cout<<"\nNumber of product:"<<prno;
+cout<<"\nName of product:";
+puts(pname);
+cout<<"Price of product:"<<price<<endl;
+}
+
+fstream fo;
+
+void write_product()
+{
+ fo.open("market.dat",ios::binary|ios::out|ios::app);
+ ob.create_product();
+ fo.write((char*)&ob,sizeof(ob));
+ fo.close();
+ cout<<"";
+ getch();
+}
+
+
+//DISPLAY FULL LIST
+
+
+void display_product()
+{
+ fo.open("market.dat",ios::binary|ios::in);
+ fo.seekg(0);
+ while (fo.read((char*)&ob,sizeof(ob)))
+ {
+  ob.show_product();
+ }
+ cout<<"\n";
+
+ fo.close();
+ getch();
+}
+
+ //func to display specific
+
+void display_specific(int n)
+ {
+   int flag=0;
+   fo.open("market.dat",ios::binary|ios::in);
+   fo.seekg(0);
+   while(fo.read((char*)&ob,sizeof(ob)))
+   {
+   if(ob.retprno()==n)
+    {
+     ob.show_product();
+     flag=1;
+     }
+   }
+   fo.close();
+  if(flag==0)
+  cout<<"\n\nrecord does not exist";
+  getch();
+  }
+
+
+//function to modify record
+void modify_product()
+{
+int no,found=0;
+clrscr();
+cout<<"\nTo modify the record";
+cout<<"\nplease enter the product number";
+cin>>no;
+fo.open("market.dat",ios::in|ios::out);
+while(fo.read((char*)&ob,sizeof(ob))&&found==0)
+ {
+  if(ob.retprno()==no)
+    {
+      ob.show_product();
+      cout<<"\n please enter the detail of new product";
+      ob.create_product();
+      int pos=-1*sizeof(ob);
+      fo.seekp(pos,ios::cur);
+      fo.write((char*)&ob,sizeof(ob));
+      cout<<"\n\n\trecord updated";
+      found=1;
+      }
+    }
+  fo.close();
+  if(found==0)
+  cout<<"\n\nrecord not found";
+  getch();
+}
+
+/****************************************************************************
+    [5].        	  DELETE       FUNCTION
+ ****************************************************************************/
+void delete_product(int n)
+{
+
+ clrscr();
+ fo.open("market.dat",ios::in|ios::out);
+ fstream fo1;
+ fo1.open("temp.dat",ios::binary|ios::out);
+ fo.seekg(0);
+ while(fo.read((char*)&ob,sizeof(ob)))
+ {
+ if(ob.retprno()!=n)
+   {
+   fo1.write((char*)&ob,sizeof(ob));
+   }
+ }
+ fo1.close();
+ fo.close();
+ remove("market.dat");
+ rename("temp.dat","market.dat");
+ cout<<"\n\n\tRecord deleted...";
+ getch();
+ }
+
+   //       FUNCTION    OF     MENU
+
+
+void menu()
+{
+clrscr();
+fo.open("market.dat",ios::in);
+if(!fo)
+{
+cout<<"\nerror!!";
+getch();
+exit(0);
+}
+cout<<"\n\n\tProduct Menu\n\n";
+cout<<"\nProduct number\t\tName\t\tPrice\n";
+while(fo.read((char*)&ob,sizeof(ob)))
+ {
+  cout<<ob.retprno()<<"\t\t"<<ob.retname()<<"\t\t";
+  cout<<ob.retprice()<<endl;
+
+ }
+fo.close();
+}
+
+
+
+  /*===============================================================================
+	       ORDER PLACING FUNCTION WHICH CAN BE ACCESS
+		   BY BOTH CUSTOMER AND STORE MANAGER
+    ===============================================================================*/
+
+void placeorder()
+  {
+   int order_arr[50],quan[50];
+   float amt,damt,total=0;
+   int m=0;
+   char ch;
+   menu();
+
+  cout<<"\n PLACE YOUR  ORDER";
+  do
+  {
+  cout<<"\n\n enter the product number:";
+  cin>>order_arr[m];
+  cout<<"\n Enter the quantity in number:";
+  cin>>quan[m];
+  m++;
+  cout<<"\n do you want to order another product ?(y/n)";
+  cin>>ch;
+  }while(ch=='y'||ch=='Y');
+
+  getch();
+  clrscr();
+  cout<<"\n Prno\t"<<"Prname\t "<<"Qty\t"<<"Price\t"<<"Amt\t";//<<"Discounted Amt\t";
+  for(int i=0;i<=m;i++)
+ {
+   fo.open("market.dat",ios::in);
+   while(fo.read((char*)&ob,sizeof(ob)));
+   {
+    if(ob.retprno()==order_arr[i])
+    {
+     amt=ob.retprice()*quan[i];
+     damt=amt-(amt*20*0.01);
+
+    cout<<"\n"<<order_arr[i]<<"\t"<<ob.retname()<<"\t"<<quan[i]<<"\t"<<ob.retprice()<<"\t"<<amt<<"\t";
+    total+=damt;
+    }
+   }
+   fo.read((char*)&ob,sizeof(ob));
+ }
+    fo.close();
+    cout<<"\n\n\nyou have to pay:";
+    cout<<total;
+    cout<<"\n\n Thank you for visiting......";
+    getch();
+    exit(0);
+}
+/*==========================================================================
+	  FUNCTION WHICH CAN BE ACCESS ONLY BY MANAGER OF STORE
+  ==========================================================================*/
+void owner()
+{
+ clrscr();
+ int no=0;
+ char ch;
+ do
+ {
+ clrscr();
+ cout<<"\t\t\tMenu";
+ cout<<"\n1.Create product";
+ cout<<"\n2.List of product";
+ cout<<"\n3.Display specific record";
+ cout<<"\n4.Modify record";
+ cout<<"\n5.Delete record";
+ cout<<"\n0.Exit";
+ cout<<"\nEnter valid choice:";
+ cin>>ch;
+ switch(ch)
+
+      {
+      case '1' :write_product();
+	      break;
+      case '2' :display_product();
+	      break;
+      case '3' :cout<<"enter number of product:";
+		cin>>no;
+		display_specific(no);
+		break;
+      case '4' :modify_product();
+		break;
+      case '5' :cout<<"\n\n\n Delete record";
+		cout<<"\n\n\please enter the product no. of the product\nthat you want to delete:";
+		cin>>no;
+		delete_product(no);
+		break;
+
+      case '0' :exit(0);
+      default:cout<<"enter valid choice";
+      }
+
+      }while(ch>'0'&&ch<'6');
+
+  getch();
+ }
+ /* =======================================================================
+			      MAIN      FUNCTION
+    =======================================================================*/
+ void main()
+ {
+ clrscr();
+ char chx;
+ do
+ {
+  cout<<"\n\t\t super mega store";
+  cout<<"\n\n1.store owner";
+  cout<<"\n2.customer";
+  cout<<"\n0.exit";
+  cout<<"\nenter valid choice";
+  cin>>chx;
+  switch(chx)
+  {
+
+   case '1' :clrscr();
+	     char pass[15];
+	     cout<<"\n\n\n\t\t\tEnter correct password";
+	     cout<<"\n\t\t\tPASSWORD:";
+	     gets(pass);
+	     if(strcmp(pass,"password")==0)
+	    {
+	     clrscr();
+	     owner();
+	     }
+	     else
+	     {
+	     cout<<"\nIncorrect password......";
+	     getch();
+	     }
+	     clrscr();
+	     break;
+
+   case '2' :placeorder();
+	     break;
+
+   case '0' :exit(0);
+
+   default  :cout<<"enter valid choice please.....;";
+  }
+ }while(chx>'0' && chx<'3');
+ getch();
+}
